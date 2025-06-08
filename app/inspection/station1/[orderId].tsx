@@ -6,7 +6,7 @@ import { ChevronLeft, Smartphone, Loader, Save, Camera, FileText, Check } from '
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import Colors from '@/constants/Colors';
 import { getOrderById } from '@/api/orders';
-import { lookupImei, submitDeviceDetails, uploadDeviceImage } from '@/api/devices';
+import { lookupImei, submitDeviceDetails, uploadDeviceImage, fetchImeiResultByHistoryId } from '@/api/devices';
 
 interface ImeiLookupResult {
   brand: string;
@@ -104,29 +104,51 @@ export default function Station1Screen() {
   }, [orderId]);
 
   const handleImeiLookup = async () => {
-    if (!imei.trim() || imei.length < 8) {
-      Alert.alert('Error', 'Please enter a valid IMEI number');
+  if (!imei.trim() || imei.length < 8) {
+    Alert.alert('Error', 'Please enter a valid IMEI number');
+    return;
+  }
+
+  setIsLookingUpImei(true);
+  try {
+    const lookup = await lookupImei(imei);
+    const historyId = lookup.history_id;
+
+    // Polling logic to get full result
+    let attempts = 0;
+    let result = null;
+
+    while (attempts < 10) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // wait 1.5s
+      try {
+        const poll = await fetchImeiResultByHistoryId(historyId);
+        if (poll && poll.brand && poll.model) {
+          result = poll;
+          break;
+        }
+      } catch (e) {
+        // Still processing — continue polling
+      }
+      attempts++;
+    }
+
+    if (!result) {
+      Alert.alert('Lookup Timeout', 'Unable to fetch IMEI details at this time. Please enter manually.');
       return;
     }
 
-    setIsLookingUpImei(true);
-    try {
-      const result = await lookupImei(imei);
-      setDeviceDetails({ brand: result.brand, model: result.model });
-      setIsValidImei(result.valid);
-      
-      if (!result.valid) {
-        Alert.alert('Invalid IMEI', 'The IMEI appears to be invalid. You can still proceed, but please check the number.');
-      }
-      
-    } catch (error) {
-      console.error('IMEI lookup error:', error);
-      Alert.alert('Lookup Failed', 'Failed to verify IMEI. Please try again or enter details manually.');
-      setIsValidImei(false);
-    } finally {
-      setIsLookingUpImei(false);
-    }
-  };
+    setDeviceDetails({ brand: result.brand, model: result.model });
+    setIsValidImei(true);
+
+  } catch (error) {
+    console.error('IMEI lookup error:', error);
+    Alert.alert('Lookup Failed', 'Failed to verify IMEI. Please try again or enter details manually.');
+    setIsValidImei(false);
+  } finally {
+    setIsLookingUpImei(false);
+  }
+};
+
 
   const handleStartCamera = (type: 'front' | 'back') => {
     if (!permission?.granted) {

@@ -61,28 +61,21 @@ export const getDevicesByOrderId = async (orderId: string): Promise<any[]> => {
 };
 
 // IMEI lookup
-export const lookupImei = async (imei: string): Promise<{ brand: string; model: string; valid: boolean }> => {
-  try {
-    const response = await fetch(`${API_BASE}/devices/lookup-imei/${imei}`);
-    if (!response.ok) {
-      throw new Error('IMEI lookup failed');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('API Error:', error);
-    // Mock IMEI lookup
-    if (imei.startsWith('12345')) {
-      return { brand: 'Apple', model: 'iPhone 13', valid: true };
-    } else if (imei.startsWith('98765')) {
-      return { brand: 'Samsung', model: 'Galaxy S21', valid: true };
-    } else if (imei.startsWith('55566')) {
-      return { brand: 'Google', model: 'Pixel 6', valid: true };
-    } else {
-      const isValid = imei.length >= 15;
-      return { brand: '', model: '', valid: isValid };
-    }
-  }
+
+export const lookupImei = async (imei: string) => {
+  const res = await fetch(`${API_BASE}/lookup-imei/${imei}`);
+  if (!res.ok) throw new Error('Lookup failed');
+  const data = await res.json();
+  return data; // Includes history_id and message
 };
+
+export const fetchImeiResultByHistoryId = async (historyId: number) => {
+  const res = await fetch(`${API_BASE}/get-imei-result/${historyId}`);
+  if (!res.ok) throw new Error('Result not ready');
+  return res.json();
+};
+
+
 
 // Submit device details (Station 1)
 export const submitDeviceDetails = async (deviceData: any): Promise<any> => {
