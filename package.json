@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
   "start": "expo start",
-  "build:web": "expo export:web"
+  "build": "expo export:web"
 },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
