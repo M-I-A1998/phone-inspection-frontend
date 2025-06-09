@@ -1,5 +1,5 @@
 // API functions for device operations
-const API_BASE = process.env.REACT_APP_API_URL;
+const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
 // Mocked device data (simulate database)
 let mockDevices = [];
