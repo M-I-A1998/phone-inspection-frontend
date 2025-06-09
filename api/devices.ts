@@ -1,5 +1,9 @@
-// API functions for device operations
-const API_BASE = process.env.EXPO_PUBLIC_API_URL;
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+
+if (!API_BASE || API_BASE.includes('undefined')) {
+  console.error('❌ EXPO_PUBLIC_API_URL is not set or misconfigured:', API_BASE);
+}
+
 
 // Mocked device data (simulate database)
 let mockDevices = [];
