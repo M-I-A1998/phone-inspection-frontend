@@ -15,15 +15,12 @@ function RootLayoutNav() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-          </>
-        ) : (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        )}
-        <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="login" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="inspection/station1/[orderId]" />
+      <Stack.Screen name="inspection/station2/[orderId]" />
+      <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
       </Stack>
       <StatusBar style="auto" />
     </>
