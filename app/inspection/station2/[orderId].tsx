@@ -81,64 +81,54 @@ export default function Station2Screen() {
   };
 
   const handleTakePicture = async () => {
-    if (!cameraRef.current || isCapturing) return;
-    
-    setIsCapturing(true);
-    try {
-      const photo = await cameraRef.current.takePictureAsync();
-      
-      if (selectedDevice) {
-        setIsUploading(true);
-        try {
-          await uploadDeviceImage(selectedDevice.id, photoType, photo.uri);
-          
-          // Update local state with the new image
-          setDevices(prev => prev.map(device => 
-            device.id === selectedDevice.id 
-              ? { 
-                  ...device, 
-                  [photoType === 'front' ? 'frontImage' : 'backImage']: photo.uri 
+  if (!cameraRef.current || isCapturing) return;
+
+  setIsCapturing(true);
+  try {
+    const photo = await cameraRef.current.takePictureAsync();
+
+    if (selectedDevice) {
+      setIsUploading(true);
+      try {
+        await uploadDeviceImage(selectedDevice.id, photoType, photo.uri);
+
+        // Update local state
+        setDevices(prev =>
+          prev.map(device =>
+            device.id === selectedDevice.id
+              ? {
+                  ...device,
+                  [photoType === 'front' ? 'frontImage' : 'backImage']: photo.uri,
                 }
               : device
-          ));
-          
-          // Close camera after successful upload
-          setIsCameraActive(false);
-          setIsUploading(false);
-          
-          // If this was the front photo, automatically prompt for back photo
-          if (photoType === 'front') {
-            Alert.alert(
-              'Front Photo Captured',
-              'Would you like to take the back photo now?',
-              [
-                {
-                  text: 'Later',
-                  style: 'cancel',
-                },
-                {
-                  text: 'Take Back Photo',
-                  onPress: () => handleStartCamera(selectedDevice, 'back'),
-                },
-              ]
-            );
-          } else {
-            // Both photos taken, show completion message
-            Alert.alert('Success', 'All photos for this device have been captured.');
-          }
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          Alert.alert('Upload Failed', 'Failed to upload the image. Please try again.');
-          setIsUploading(false);
+          )
+        );
+
+        setIsCameraActive(false);
+        setIsUploading(false);
+
+        if (photoType === 'front') {
+          Alert.alert('Front Photo Captured', 'Would you like to take the back photo now?', [
+            { text: 'Later', style: 'cancel' },
+            { text: 'Take Back Photo', onPress: () => handleStartCamera(selectedDevice, 'back') },
+          ]);
+        } else {
+          Alert.alert('Success', 'All photos for this device have been captured.');
         }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        Alert.alert('Upload Failed', 'Failed to upload the image.');
+        setIsUploading(false);
       }
-    } catch (error) {
-      console.error('Camera error:', error);
-      Alert.alert('Camera Error', 'Failed to capture photo. Please try again.');
-    } finally {
-      setIsCapturing(false);
     }
-  };
+  } catch (error) {
+    console.error('Camera error:', error);
+    Alert.alert('Camera Error', 'Failed to capture photo.');
+  } finally {
+    setIsCapturing(false);
+  }
+};
+
 
   const handleExportReport = async () => {
     if (!orderId) return;
