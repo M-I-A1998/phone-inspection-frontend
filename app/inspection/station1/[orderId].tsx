@@ -6,7 +6,8 @@ import { ChevronLeft, Smartphone, Loader, Save, Camera, FileText, Check } from '
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import Colors from '@/constants/Colors';
 import { getOrderById } from '@/api/orders';
-import { lookupImei, submitDeviceDetails, uploadDeviceImage, fetchImeiResultByHistoryId } from '@/api/devices';
+import { submitDeviceDetails, uploadDeviceImage } from '@/api/devices';
+
 
 interface ImeiLookupResult {
   brand: string;
@@ -253,75 +254,71 @@ export default function Station1Screen() {
   };
 
   const handleSubmit = async () => {
-    if (!imei.trim()) {
-      Alert.alert('Error', 'Please enter an IMEI number');
-      return;
-    }
+  if (!imei.trim()) {
+    Alert.alert('Error', 'Please enter an IMEI number');
+    return;
+  }
 
-    if (!deviceDetails?.brand || !deviceDetails?.model) {
-      Alert.alert('Error', 'Please lookup the IMEI or enter device details manually');
-      return;
-    }
+  if (!deviceDetails?.brand || !deviceDetails?.model) {
+    Alert.alert('Error', 'Please lookup the IMEI or enter device details manually');
+    return;
+  }
 
-    if (selectedWorkflow === 'complete' && (!frontImage || !backImage)) {
-      Alert.alert('Error', 'Please take both front and back photos');
-      return;
-    }
+  if (selectedWorkflow === 'complete' && (!frontImage || !backImage)) {
+    Alert.alert('Error', 'Please take both front and back photos');
+    return;
+  }
 
-    setIsSubmitting(true);
-    try {
-      const deviceData = {
-        orderId,
-        imei,
-        serialNumber,
-        brand: deviceDetails.brand,
-        model: deviceDetails.model,
-        conditions: selectedConditions,
-      };
-      
-      const savedDevice = await submitDeviceDetails(deviceData);
+  setIsSubmitting(true);
+  try {
+    const inspectionDate = new Date().toISOString().split('T')[0];
 
-      // Upload photos if in complete workflow
-      if (selectedWorkflow === 'complete') {
-        setIsUploading(true);
-        if (frontImage) {
-          await uploadDeviceImage(savedDevice.id, 'front', frontImage);
-        }
-        if (backImage) {
-          await uploadDeviceImage(savedDevice.id, 'back', backImage);
-        }
+    const deviceData = {
+      imei,
+      serialNumber,
+      brand: deviceDetails.brand,
+      model: deviceDetails.model,
+      conditions: selectedConditions,
+      orderId: orderId,
+      inspectorName: orderDetails?.inspector_name || 'Unknown',
+      inspectionDate,
+    };
+
+    const savedDevice = await submitDeviceDetails(deviceData);
+
+    if (selectedWorkflow === 'complete') {
+      setIsUploading(true);
+
+      if (frontImage) {
+        await uploadDeviceImage(savedDevice.id, 'front', frontImage);
       }
 
-      // Reset form
-      resetForm();
-      setFrontImage(null);
-      setBackImage(null);
-
-      Alert.alert(
-        'Device Added',
-        'Would you like to add another device or complete the order?',
-        [
-          {
-            text: 'Done',
-            onPress: handleDone,
-          },
-          {
-            text: 'Add Another Device',
-            style: 'default',
-            onPress: () => {
-              // Form is already reset
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Error submitting device:', error);
-      Alert.alert('Error', 'Failed to save device details. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-      setIsUploading(false);
+      if (backImage) {
+        await uploadDeviceImage(savedDevice.id, 'back', backImage);
+      }
     }
-  };
+
+    resetForm();
+    setFrontImage(null);
+    setBackImage(null);
+
+    Alert.alert(
+      'Device Added',
+      'Would you like to add another device or complete the order?',
+      [
+        { text: 'Done', onPress: handleDone },
+        { text: 'Add Another Device' },
+      ]
+    );
+  } catch (error) {
+    console.error('Error submitting device:', error);
+    Alert.alert('Error', 'Failed to save device details.');
+  } finally {
+    setIsSubmitting(false);
+    setIsUploading(false);
+  }
+};
+
 
   const toggleManualEntry = () => {
     setManualEntry(!manualEntry);
