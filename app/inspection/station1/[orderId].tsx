@@ -7,6 +7,8 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import Colors from '@/constants/Colors';
 import { getOrderById } from '@/api/orders';
 import { submitDeviceDetails, uploadDeviceImage } from '@/api/devices';
+import { updateOrderStatus } from '@/api/orders';
+
 
 
 interface ImeiLookupResult {
@@ -221,37 +223,36 @@ export default function Station1Screen() {
     setShowWorkflowSelection(false);
   };
 
-  const handleDone = async () => {
-    if (!orderId) return;
-    
-    Alert.alert(
-      'Complete Order',
-      selectedWorkflow === 'complete' 
-        ? 'This will mark the order as complete. All device details and photos have been saved.'
-        : 'This will mark the device details as complete. Photos can be added at Station 2.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Complete',
-          onPress: async () => {
-            setIsCompleting(true);
-            try {
-              // Navigate back to orders tab
-              router.replace('/(tabs)/orders');
-            } catch (error) {
-              console.error('Error completing order:', error);
-              Alert.alert('Error', 'Failed to complete the order');
-            } finally {
-              setIsCompleting(false);
-            }
+ const handleDone = async () => {
+  if (!orderId) return;
+
+  Alert.alert(
+    'Complete Order',
+    'This will mark the order as complete.',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel'
+      },
+      {
+        text: 'Complete',
+        onPress: async () => {
+          setIsCompleting(true);
+          try {
+            await updateOrderStatus(orderId, 'Completed');
+            router.replace('/(tabs)/orders');
+          } catch (error) {
+            console.error('Error completing order:', error);
+            Alert.alert('Error', 'Failed to complete the order');
+          } finally {
+            setIsCompleting(false);
           }
         }
-      ]
-    );
-  };
+      }
+    ]
+  );
+};
+
 
   const handleSubmit = async () => {
   if (!imei.trim()) {
